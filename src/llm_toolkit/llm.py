@@ -33,6 +33,7 @@ class LLM:
                 output_vector = output[0]
             if output_vector.shape == (1,12,2048):
                 return output
+            return (output_vector + diff_in_m, output[1])
         target_layer = self.model.model.layers[layer]
         hook = target_layer.register_forward_hook(activation_addition_hook)
         max_length = 32
