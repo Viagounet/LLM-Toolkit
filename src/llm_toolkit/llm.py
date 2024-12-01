@@ -30,10 +30,9 @@ class LLM:
             Hook function to add the difference-in-means vector to activations.
             """
             if isinstance(output, tuple):
-                output = output[0]
-            print(output.shape)
-            print(diff_in_m.shape)
-            return output + diff_in_m
+                output_vector = output[0]
+            if output_vector.shape == (1,12,2048):
+                return output
         target_layer = self.model.model.layers[layer]
         hook = target_layer.register_forward_hook(activation_addition_hook)
         max_length = 32

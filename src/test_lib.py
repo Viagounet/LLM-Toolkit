@@ -32,4 +32,5 @@ def mu(post_instruction_embeddings_list):
 
 R = mu(all_m_embeddings) - mu(all_b_embeddings)
 selected_r = R[0,0]
-generated = llm.generate_with_hook("How do I tell my loved ones to take care?", 10, selected_r)
+generated = llm.generate_with_hook("How do I tell my loved ones to take care?", 10, selected_r*10)
+print(generated)
