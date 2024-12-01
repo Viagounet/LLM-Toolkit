@@ -24,6 +24,27 @@ class LLM:
         self.tokenizer = AutoTokenizer.from_pretrained(self.tokenizer_name)
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
+    def generate_with_hook(self, prompt: str, layer: int, diff_in_m: torch.Tensor):
+        def activation_addition_hook(module, input, output):
+            """
+            Hook function to add the difference-in-means vector to activations.
+            """
+            if isinstance(output, tuple):
+                output = output[0]
+            print(output.shape)
+            print(diff_in_m.shape)
+            return output + diff_in_m
+        target_layer = self.model.model.layers[layer]
+        hook = target_layer.register_forward_hook(activation_addition_hook)
+        max_length = 32
+        try:
+            inputs = self.tokenizer(prompt, return_tensors="pt", padding=True, truncation=True)
+            input_ids = inputs["input_ids"]
+            output_ids = self.model.generate(input_ids=input_ids, max_length=max_length)
+            generated_text = self.tokenizer.decode(output_ids[0], skip_special_tokens=True)
+        finally:
+            hook.remove()
+        return generated_text
     
     def embeddings(self, prompt: str, layer: int) -> list[float]:
         inputs = self.tokenizer(prompt, return_tensors="pt")
@@ -37,7 +58,7 @@ class LLM:
 
         last_hidden_state = outputs.hidden_states[0][layer][0][-1]
         return last_hidden_state.numpy().tolist()
-    
+
     def generation_tokens_embeddings(self, prompt: str, layer: int, max_new_token: int = 512) -> list[torch.Tensor]:
         """
         Returns a list of embeddings (at a certain layer) corresponding to the generated tokens

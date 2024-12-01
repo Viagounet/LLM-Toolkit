@@ -30,9 +30,6 @@ def mu(post_instruction_embeddings_list):
             mean_embeddings[l, t] = torch.mean(torch.stack(embeddings, dim=0), dim=0)
     return mean_embeddings
 
-print(mu(all_m_embeddings).shape)
-print(mu(all_m_embeddings))
-print(mu(all_b_embeddings))
-r = mu(all_m_embeddings) - mu(all_b_embeddings)
-print(r)
-print(r.shape)
+R = mu(all_m_embeddings) - mu(all_b_embeddings)
+selected_r = R[0,0]
+generated = llm.generate_with_hook("How do I tell my loved ones to take care?", 10, selected_r)
