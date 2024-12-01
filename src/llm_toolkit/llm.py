@@ -24,11 +24,13 @@ class LLM:
         self.tokenizer = AutoTokenizer.from_pretrained(self.tokenizer_name)
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
-    def generate_with_hook(self, prompt: str, layer: int, diff_in_m: torch.Tensor):
+    def generate_with_hook(self, prompt: str, layer: int, diff_in_m: Optional[torch.Tensor]=None):
         def activation_addition_hook(module, input, output):
             """
             Hook function to add the difference-in-means vector to activations.
             """
+            if diff_in_m is None:
+                return output
             if isinstance(output, tuple):
                 output_vector = output[0]
             if output_vector.shape == (1,12,2048):
@@ -36,7 +38,7 @@ class LLM:
             return (output_vector + diff_in_m, output[1])
         target_layer = self.model.model.layers[layer]
         hook = target_layer.register_forward_hook(activation_addition_hook)
-        max_length = 32
+        max_length = 512
         try:
             inputs = self.tokenizer(prompt, return_tensors="pt", padding=True, truncation=True)
             input_ids = inputs["input_ids"]
