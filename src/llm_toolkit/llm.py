@@ -1,12 +1,14 @@
 from typing import Optional
 import numpy as np
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
-
-import torch
 import torch.nn as nn
 import time
 
+from transformers import AutoTokenizer, AutoModelForCausalLM
+from torch.utils.data import Dataset, DataLoader
+
+
+from llm_toolkit.dataset import DataCollator, TextDataset
 from llm_toolkit.probe import ProbeModel
 
 
@@ -121,6 +123,12 @@ class LLM:
                 # attention_mask = torch.cat([attention_mask, torch.ones((attention_mask.shape[0], 1), dtype=torch.long)], dim=-1)
                 # token_string = self.tokenizer.decode(generated_ids.squeeze().tolist(), skip_special_tokens=True)
                 # print(token_string)
+
+    def data_loader(self, texts: list[str], labels: list[int], target_layer: int):
+        dataset = TextDataset(texts, labels)
+        collator = DataCollator(embedding_function=self.embeddings, target_layer=target_layer, device='cuda')
+        data_loader = DataLoader(dataset, batch_size=2, collate_fn=collator)
+        return data_loader
 
     def train_probe(self, embeddings: list[np.ndarray], labels: list[str]):
         probe = ProbeModel(2048)
